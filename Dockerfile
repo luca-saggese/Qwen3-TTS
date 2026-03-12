@@ -24,12 +24,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Layer 2: Setup variabili d'ambiente per HuggingFace
 # ============================================================================
 # HF_HOME: directory di cache per i modelli di HuggingFace
-ENV HF_HOME=/huggingface
+ENV HF_HOME=/app/models \
+    HUGGINGFACE_HUB_CACHE=/app/models/hub \
+    TRANSFORMERS_CACHE=/app/models
+
+# Crea la directory di cache
+RUN mkdir -p /app/models
+
 # ============================================================================
-# Installa le dipendenze del progetto escludendo torch, cuda e gpu-related
-# che sono già presenti nell'immagine base pytorch:25.10-py3
+# Layer 3: Copia solo i file di configurazione (cache strategy: setup base)
+# ============================================================================
+COPY pyproject.toml MANIFEST.in /app/
+
+# ============================================================================
+# Layer 4: Installa le dipendenze Python con fix di compatibilità
+# ============================================================================
+# Nota: transformers richiede torchvision per alcune funzionalità, ma l'immagine base
+# contiene una versione che può avere conflitti. Installiamo in questo ordine strategico:
 RUN pip install --no-cache-dir -q \
-    transformers==4.57.3 \
+    --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -q \
+    transformers==4.46.3 \
     accelerate==1.12.0 \
     gradio \
     librosa \
@@ -54,20 +69,9 @@ RUN pip install --no-cache-dir -e .
 # Uncomment the line below per pre-scaricare i modelli durante il build
 # (questo aumenta il tempo di build ma riduce il tempo di startup)
 # RUN python /app/download_models.py --tokenizer-only
-#    onnxruntime \
-#    einops
 
 # ============================================================================
-# Layer 4: Copia il codice sorgente (cache strategy: change frequently)
-# ============================================================================
-COPY . /app
-# ============================================================================
-# Layer 5: Installa il pacchetto qwen-tts in modalità develop
-# ============================================================================
-RUN pip install --no-cache-dir -e .
-
-# ============================================================================
-# Layer 6: Configurazione runtime
+# Layer 8: Configurazione runtime
 # ============================================================================
 EXPOSE 7860
 
@@ -78,6 +82,9 @@ ENV GRADIO_SERVER_PORT=7860
 # Health check opzionale (utile per orchestrazione)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:7860/info || exit 1
+
+# Lancia la demo all'avvio del container
+CMD ["qwen-tts-demo"]
 
 # Lancia la demo all'avvio del container
 CMD ["qwen-tts-demo"]
