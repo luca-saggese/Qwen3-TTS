@@ -39,3 +39,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:7860/info || exit 1
 
 CMD ["qwen-tts-demo", "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign", "--port", "8080", "--ip", "0.0.0.0"]
+# qwen-tts-demo Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign --port 8080 --ip 0.0.0.0
