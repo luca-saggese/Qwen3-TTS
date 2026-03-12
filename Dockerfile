@@ -42,8 +42,6 @@ COPY pyproject.toml MANIFEST.in /app/
 RUN pip install --no-cache-dir -q --upgrade pip setuptools wheel
 
 RUN pip install --no-cache-dir -q \
-    transformers==4.57.3 \
-    accelerate==1.12.0 \
     gradio \
     librosa \
     soundfile \
