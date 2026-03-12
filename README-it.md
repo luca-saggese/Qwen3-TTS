@@ -120,6 +120,38 @@ http://localhost:7860
 - Descrizione scritta per voice design
 - Anteprima e download dell'audio generato
 
+### Pre-Scaricare i Modelli
+
+Per evitare download durante la prima esecuzione, puoi pre-scaricare i modelli con lo script dedicato:
+
+```bash
+# Scarica solo il tokenizer (leggero, ~500MB)
+python download_models.py --tokenizer-only
+
+# Scarica i modelli default (tokenizer + 0.6B)
+python download_models.py
+
+# Scarica un modello specifico
+python download_models.py --model Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
+
+# Scarica TUTTI i modelli (richiede ~60GB)
+python download_models.py --all
+
+# Usa una directory custom per i modelli
+python download_models.py --cache-dir /mnt/models --tokenizer-only
+```
+
+I modelli verranno salvati in:
+```
+$HF_HOME/hub/
+```
+
+Per impostare HF_HOME:
+```bash
+export HF_HOME=/custom/path/to/models
+python download_models.py
+```
+
 ### Dalla Linea di Comando
 
 Consultare gli script di esempio nella cartella `examples/`:
@@ -152,15 +184,42 @@ audio_data.save("output.wav")
 
 ## Docker
 
-### Costruire l'Immagine
+### Configurazione Variabili d'Ambiente
+
+L'immagine Docker usa le seguenti variabili d'ambiente per gestire i modelli:
 
 ```bash
-# Dalla directory radice del progetto
-docker build -t qwen3-tts:latest .
-
-# O con tag specifico
-docker build -t qwen3-tts:25.10 .
+# Directory di cache per HuggingFace (dove vengono salvati i modelli)
+HF_HOME=/app/models
+HUGGINGFACE_HUB_CACHE=/app/models/hub
+TRANSFORMERS_CACHE=/app/models
 ```
+
+### Costruire l'Immagine
+
+#### 1. Build Lean (senza modelli pre-scaricati)
+
+```bash
+docker build -t qwen3-tts:latest .
+```
+
+Questa versione è leggera (~5GB) ma scarica i modelli al primo avvio.
+
+#### 2. Build con Pre-Scaricamento (opzionale)
+
+Uncomment la linea nel Dockerfile:
+
+```dockerfile
+RUN python /app/download_models.py --tokenizer-only
+```
+
+Poi ricompila:
+
+```bash
+docker build -t qwen3-tts:with-models .
+```
+
+Questa versione include il tokenizer nel'immagine (~7GB totali).
 
 ### Eseguire il Container
 
@@ -189,14 +248,30 @@ docker run --gpus all -p 7860:7860 \
   qwen3-tts:latest
 ```
 
+Così i modelli scaricati sul host verranno riutilizzati da diversi container.
+
 #### 4. **Con File di Input/Output**
 
 ```bash
 docker run --gpus all -p 7860:7860 \
+  -v /path/to/models:/app/models \
   -v /path/to/input:/app/input \
   -v /path/to/output:/app/output \
   --name qwen3-tts-demo \
   qwen3-tts:latest
+```
+
+#### 5. **Pre-Scaricare Modelli nel Container**
+
+```bash
+# Accedi al container
+docker exec -it qwen3-tts-demo bash
+
+# Scarica i modelli
+python /app/download_models.py --tokenizer-only
+
+# Oppure scarica tutto
+python /app/download_models.py --all
 ```
 
 ### Accesso all'Interfaccia
@@ -224,6 +299,52 @@ docker rm qwen3-tts-demo
 
 # Rimuovi l'immagine
 docker rmi qwen3-tts:latest
+
+# Visualizza il volume dei modelli
+docker exec qwen3-tts-demo du -sh /app/models
+```
+
+### Docker Compose (Opzionale)
+
+Crea un file `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+
+services:
+  qwen3-tts:
+    image: qwen3-tts:latest
+    container_name: qwen3-tts-demo
+    ports:
+      - "7860:7860"
+    volumes:
+      - models_cache:/app/models
+      - ./input:/app/input
+      - ./output:/app/output
+    environment:
+      - GRADIO_SERVER_NAME=0.0.0.0
+      - GRADIO_SERVER_PORT=7860
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7860/info"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  models_cache:
+```
+
+Avvia con:
+
+```bash
+docker-compose up
 ```
 
 ---

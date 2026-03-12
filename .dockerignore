@@ -62,6 +62,9 @@ docs/_build/
 *.pth
 *.pt
 *.bin
+models/
+.cache/
+huggingface/
 
 # Misc
 *.log

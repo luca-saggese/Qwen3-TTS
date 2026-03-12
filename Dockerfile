@@ -17,15 +17,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsndfile1 \
     git \
     wget \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================================
-# Layer 2: Copia solo i file di configurazione (cache strategy: setup base)
+# Layer 2: Setup variabili d'ambiente per HuggingFace
 # ============================================================================
-COPY pyproject.toml MANIFEST.in /app/
-
-# ============================================================================
-# Layer 3: Installa le dipendenze Python (cache strategy: change when deps change)
+# HF_HOME: directory di cache per i modelli di HuggingFace
+ENV HF_HOME=/huggingface
 # ============================================================================
 # Installa le dipendenze del progetto escludendo torch, cuda e gpu-related
 # che sono già presenti nell'immagine base pytorch:25.10-py3
@@ -40,10 +39,29 @@ RUN pip install --no-cache-dir -q \
     einops
 
 # ============================================================================
-# Layer 4: Copia il codice sorgente (cache strategy: change frequently)
+# Layer 5: Copia il codice sorgente (cache strategy: change frequently)
 # ============================================================================
 COPY . /app
 
+# ============================================================================
+# Layer 6: Installa il pacchetto qwen-tts in modalità develop
+# ============================================================================
+RUN pip install --no-cache-dir -e .
+
+# ============================================================================
+# Layer 7: Pre-scarica i modelli (opzionale, commentare per setup lean)
+# ============================================================================
+# Uncomment the line below per pre-scaricare i modelli durante il build
+# (questo aumenta il tempo di build ma riduce il tempo di startup)
+# RUN python /app/download_models.py --tokenizer-only
+    onnxruntime \
+    einops
+
+# ============================================================================
+# Layer 4: Copia il codice sorgente (cache strategy: change frequently)
+# ============================================================================
+COPY . /app
+8
 # ============================================================================
 # Layer 5: Installa il pacchetto qwen-tts in modalità develop
 # ============================================================================
