@@ -1,6 +1,4 @@
-# Multi-stage build: utilizza l'immagine NVIDIA PyTorch come base
-# Nota: 24.12 è più stabile di 25.10 per compatibilità torch/torchvision
-FROM nvcr.io/nvidia/pytorch:24.12-py3
+FROM nvcr.io/nvidia/pytorch:25.10-py3
 
 # Metadata
 LABEL maintainer="Qwen Team"
