@@ -1,5 +1,6 @@
 # Multi-stage build: utilizza l'immagine NVIDIA PyTorch come base
-FROM nvcr.io/nvidia/pytorch:25.10-py3
+# Nota: 24.12 è più stabile di 25.10 per compatibilità torch/torchvision
+FROM nvcr.io/nvidia/pytorch:24.12-py3
 
 # Metadata
 LABEL maintainer="Qwen Team"
@@ -24,9 +25,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Layer 2: Setup variabili d'ambiente per HuggingFace
 # ============================================================================
 # HF_HOME: directory di cache per i modelli di HuggingFace
+# NOTA: TRANSFORMERS_CACHE è deprecato, usiamo solo HF_HOME
 ENV HF_HOME=/app/models \
-    HUGGINGFACE_HUB_CACHE=/app/models/hub \
-    TRANSFORMERS_CACHE=/app/models
+    HUGGINGFACE_HUB_CACHE=/app/models/hub
 
 # Crea la directory di cache
 RUN mkdir -p /app/models
@@ -39,16 +40,14 @@ COPY pyproject.toml MANIFEST.in /app/
 # ============================================================================
 # Layer 4: Installa le dipendenze Python con fix di compatibilità
 # ============================================================================
-# Nota: transformers richiede torchvision per alcune funzionalità, ma l'immagine base
-# contiene una versione che può avere conflitti. Installiamo in questo ordine strategico:
+# Nota: Usando versioni stabili compatibili con pytorch:24.12
+RUN pip install --no-cache-dir -q --upgrade pip setuptools wheel
+
 RUN pip install --no-cache-dir -q \
-    --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -q \
-    transformers==4.46.3 \
+    transformers==4.57.3 \
     accelerate==1.12.0 \
     gradio \
     librosa \
-    torchaudio \
     soundfile \
     onnxruntime \
     einops
@@ -86,5 +85,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Lancia la demo all'avvio del container
 CMD ["qwen-tts-demo"]
 
-# Lancia la demo all'avvio del container
-CMD ["qwen-tts-demo"]
+# Lancia la demo all'

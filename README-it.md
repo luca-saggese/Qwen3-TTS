@@ -192,7 +192,6 @@ L'immagine Docker usa le seguenti variabili d'ambiente per gestire i modelli:
 # Directory di cache per HuggingFace (dove vengono salvati i modelli)
 HF_HOME=/app/models
 HUGGINGFACE_HUB_CACHE=/app/models/hub
-TRANSFORMERS_CACHE=/app/models
 ```
 
 ### Costruire l'Immagine
@@ -223,128 +222,97 @@ Questa versione include il tokenizer nel'immagine (~7GB totali).
 
 ### Eseguire il Container
 
-#### 1. **Con Accesso GPU (Consigliato)**
+#### Metodo 1: Script Helper (Consigliato)
+
+Per eseguire il container con le migliori configurazioni GPU automaticamente:
+
+**Su Linux/macOS:**
+
+```bash
+# Rendi lo script eseguibile
+chmod +x run.sh
+
+# Esegui con default (GPU, porta 7860)
+./run.sh
+
+# Altre opzioni
+./run.sh --no-gpu              # Disabilita GPU
+./run.sh --port 8000           # Cambia porta
+./run.sh --detach              # Background
+./run.sh --rebuild             # Ricompila l'immagine
+./run.sh --models-dir /mnt/my-models  # Riusa modelli
+./run.sh --help                # Mostra tutte le opzioni
+```
+
+**Su Windows (PowerShell/CMD):**
+
+```cmd
+run.cmd
+run.cmd --no-gpu
+run.cmd --port 8000
+run.cmd --detach
+run.cmd --rebuild
+run.cmd --help
+```
+
+#### Metodo 2: Docker Run Diretto
+
+Con le flag corrette per GPU e PyTorch:
 
 ```bash
 docker run --gpus all -p 7860:7860 \
   --name qwen3-tts-demo \
+  --ipc=host \
+  --ulimit memlock=-1 \
+  --ulimit stack=67108864 \
+  --shm-size=2gb \
   qwen3-tts:latest
 ```
 
-#### 2. **Solo CPU**
+**Spiegazione delle flag:**
+- `--gpus all`: Abilita tutte le GPU NVIDIA
+- `--ipc=host`: Abilita IPC per comunicazione tra processi (richiesto da PyTorch)
+- `--ulimit memlock=-1`: Memoria lockable illimitata
+- `--ulimit stack=67108864`: Stack size 64MB
+- `--shm-size=2gb`: Shared memory 2GB (PyTorch ne ha bisogno)
+
+#### Metodo 3: Docker Compose
+
+Il file `docker-compose.yml` già include tutte le configurazioni ottimali:
 
 ```bash
-docker run -p 7860:7860 \
-  --name qwen3-tts-demo \
-  qwen3-tts:latest
+# Avvia con docker-compose
+docker-compose up
+
+# In background
+docker-compose up -d
+
+# Ferma
+docker-compose down
 ```
 
-#### 3. **Con Volume Persistente per i Modelli**
+### Pre-Scaricare Modelli nei Container
+
+Per evitare download durante il primo avvio:
 
 ```bash
-docker run --gpus all -p 7860:7860 \
-  -v /path/to/models:/app/models \
-  --name qwen3-tts-demo \
-  qwen3-tts:latest
-```
-
-Così i modelli scaricati sul host verranno riutilizzati da diversi container.
-
-#### 4. **Con File di Input/Output**
-
-```bash
-docker run --gpus all -p 7860:7860 \
-  -v /path/to/models:/app/models \
-  -v /path/to/input:/app/input \
-  -v /path/to/output:/app/output \
-  --name qwen3-tts-demo \
-  qwen3-tts:latest
-```
-
-#### 5. **Pre-Scaricare Modelli nel Container**
-
-```bash
-# Accedi al container
+# Accedi al container in esecuzione
 docker exec -it qwen3-tts-demo bash
 
-# Scarica i modelli
+# Dentro il container: scarica solo il tokenizer
 python /app/download_models.py --tokenizer-only
 
-# Oppure scarica tutto
+# Oppure scarica un modello specifico
+python /app/download_models.py --model Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
+
+# Oppure scarica tutto (richiede ~60GB)
 python /app/download_models.py --all
 ```
 
-### Accesso all'Interfaccia
-
-Una volta il container è in esecuzione, accedi all'interfaccia web:
-
-```
-http://localhost:7860
-```
-
-### Comandi Utili per Docker
+I modelli saranno salvati in `/app/models` nel container, che puoi montare come volume per riusarli:
 
 ```bash
-# Visualizza i log
-docker logs qwen3-tts-demo
-
-# Accedi al container interattivamente
-docker exec -it qwen3-tts-demo bash
-
-# Ferma il container
-docker stop qwen3-tts-demo
-
-# Rimuovi il container
-docker rm qwen3-tts-demo
-
-# Rimuovi l'immagine
-docker rmi qwen3-tts:latest
-
-# Visualizza il volume dei modelli
-docker exec qwen3-tts-demo du -sh /app/models
-```
-
-### Docker Compose (Opzionale)
-
-Crea un file `docker-compose.yml`:
-
-```yaml
-version: '3.8'
-
-services:
-  qwen3-tts:
-    image: qwen3-tts:latest
-    container_name: qwen3-tts-demo
-    ports:
-      - "7860:7860"
-    volumes:
-      - models_cache:/app/models
-      - ./input:/app/input
-      - ./output:/app/output
-    environment:
-      - GRADIO_SERVER_NAME=0.0.0.0
-      - GRADIO_SERVER_PORT=7860
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7860/info"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-volumes:
-  models_cache:
-```
-
-Avvia con:
-
-```bash
-docker-compose up
+./run.sh --models-dir /path/to/models
 ```
 
 ---
@@ -418,26 +386,78 @@ audio.save("cloned_voice.wav")
 
 ## Risoluzione dei Problemi
 
+### Problema: "ModuleNotFoundError: Could not import module 'AutoProcessor'"
+
+Questo errore indica un conflitto di dipendenze tra `torch` e `torchvision`.
+
+**Soluzione:**
+
+L'immagine Docker è stata aggiornata a `pytorch:24.12-py3` che ha migliore stabilità. Ricompila:
+
+```bash
+docker rmi qwen3-tts:latest  # Rimuovi la vecchia immagine
+docker build -t qwen3-tts:latest .
+./run.sh  # Esegui con lo script aggiornato
+```
+
+Se il problema persiste in locale (non Docker):
+
+```bash
+# Reinstalla le dipendenze giuste
+pip install --upgrade \
+    transformers==4.57.3 \
+    torch torchvision torchaudio \
+    --index-url https://download.pytorch.org/whl/cu121
+```
+
+### Problema: "WARNING: The NVIDIA Driver was not detected"
+
+Questo è un **solo warning**, non un errore. Significa che NVIDIA Docker non è configurato.
+
+**Soluzione per abilitare GPU:**
+
+1. **Installa NVIDIA Container Toolkit:**
+   ```bash
+   # Ubuntu/Debian
+   curl https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+   distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+   sudo apt-get update && sudo apt-get install -y nvidia-docker2
+   sudo systemctl restart docker
+   
+   # Altre distro: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html
+   ```
+
+2. **Su macOS con Docker Desktop:**
+   - Settings → Resources → GPU: Toggle su ON
+
+3. **Verifica l'installazione:**
+   ```bash
+   docker run --rm --gpus all nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi
+   ```
+
 ### Problema: "CUDA out of memory"
 
 **Soluzione:**
 - Usa il modello 0.6B invece di 1.7B
 - Riduci la lunghezza del testo di input
-- Aumenta la RAM della GPU nel container: `docker run --gpus all --memory 32g`
+- Aumenta la shared memory: `./run.sh` usa già 2GB, se non bastano puoi usare `--shm-size=4gb`
+- O esegui in CPU: `./run.sh --no-gpu`
 
 ### Problema: "Model files not found"
 
 **Soluzione:**
-- Scarica i modelli prima: vedi sezione "Download dei Modelli"
-- O monta una directory con i modelli: `-v /path/to/models:/app/models`
+- Scarica i modelli prima: `python download_models.py --tokenizer-only`
+- O monta una directory con i modelli: `./run.sh --models-dir /path/to/models`
+- Verifica che HF_HOME sia impostato correttamente: `echo $HF_HOME`
 
 ### Problema: L'interfaccia non è accessibile
 
 **Soluzione:**
 - Verifica che il container sia in esecuzione: `docker ps`
 - Verifica i log: `docker logs qwen3-tts-demo`
-- Assicurati che la porta 7860 non sia occupata: `lsof -i :7860`
-- Su Docker Desktop per Mac/Windows, potrebbe essere necessario accedere tramite `http://host.docker.internal:7860` o l'IP Docker
+- Assicurati che la porta 7860 non sia occupata: `lsof -i :7860` (su Linux/macOS)
+- Su Docker Desktop per Mac/Windows, potrebbe essere necessario accedere tramite `http://127.0.0.1:7860` o `http://host.docker.internal:7860`
+- Se usi `./run.sh --port 8000`, accedi a `http://localhost:8000`
 
 ### Problema: Audio di scarsa qualità
 
@@ -445,6 +465,24 @@ audio.save("cloned_voice.wav")
 - Assicurati che il testo di input sia privo di errori
 - Usa istruzioni dettagliate per il voice design
 - Utilizza un campione di voce pulito per il voice clone (almeno 3 secondi)
+- Verifica che il modello sia stato scaricato completamente (file non corrotti)
+
+### Problema: "docker: command not found"
+
+**Soluzione:**
+- Installa Docker Desktop: https://www.docker.com/products/docker-desktop
+- Su Linux, installa Docker Engine: https://docs.docker.com/engine/install/
+
+### Problema: Permessi denied su Linux
+
+**Soluzione:**
+
+Esegui come root o aggiungi l'utente al gruppo docker:
+
+```bash
+sudo usermod -aG docker $USER
+newgrp docker  # Applica i cambiamenti senza logout
+```
 
 ---
 
