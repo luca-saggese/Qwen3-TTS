@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/pytorch:25.10-py3
+FROM nvcr.io/nvidia/pytorch:24.12-py3
 
 LABEL maintainer="Qwen Team"
 LABEL description="Qwen3-TTS with CUDA support"
@@ -38,8 +38,7 @@ RUN pip install --no-cache-dir \
     tqdm \
     scipy \
     matplotlib \
-    pillow \
-    && pip install --no-cache-dir --no-deps torchvision==0.20.1
+    pillow
 
 COPY . /app
 
