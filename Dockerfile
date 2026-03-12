@@ -28,6 +28,11 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -e .
 RUN pip install --no-cache-dir torchao tqdm scipy matplotlib pillow
 
+# Uninstall and reinstall torchvision to ensure compatibility with the PyTorch version in the base image
+RUN pip uninstall torchvision -y
+RUN pip install torchvision --no-cache-dir
+RUN pip install --upgrade librosa
+
 EXPOSE 7860
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
