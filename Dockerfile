@@ -61,7 +61,6 @@ RUN pip install --no-cache-dir -e .
 # Layer 4: Copia il codice sorgente (cache strategy: change frequently)
 # ============================================================================
 COPY . /app
-8
 # ============================================================================
 # Layer 5: Installa il pacchetto qwen-tts in modalità develop
 # ============================================================================
