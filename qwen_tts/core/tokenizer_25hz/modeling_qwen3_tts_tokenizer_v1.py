@@ -23,9 +23,14 @@ import torch
 from torch import nn
 from torch.nn import Parameter
 from torch.nn import functional as F
-from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
+from transformers.modeling_utils import PreTrainedModel
 from transformers.utils import ModelOutput, auto_docstring, logging
 from transformers.utils.hub import cached_file
+
+try:
+    from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS
+except ImportError:
+    from transformers.models.llama.modeling_llama import LLAMA_ATTENTION_CLASSES as ALL_ATTENTION_FUNCTIONS
 
 from torch.nn.utils.rnn import pad_sequence
 

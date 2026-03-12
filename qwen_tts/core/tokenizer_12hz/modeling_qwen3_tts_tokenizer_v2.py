@@ -35,7 +35,12 @@ from transformers.modeling_flash_attention_utils import FlashAttentionKwargs
 from transformers.modeling_layers import GradientCheckpointingLayer
 from transformers.modeling_outputs import BaseModelOutputWithPast
 from transformers.modeling_rope_utils import ROPE_INIT_FUNCTIONS, dynamic_rope_update
-from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
+from transformers.modeling_utils import PreTrainedModel
+
+try:
+    from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS
+except ImportError:
+    from transformers.models.llama.modeling_llama import LLAMA_ATTENTION_CLASSES as ALL_ATTENTION_FUNCTIONS
 from transformers.processing_utils import Unpack
 from transformers.utils import ModelOutput, auto_docstring, logging
 from transformers.utils.deprecation import deprecate_kwarg
