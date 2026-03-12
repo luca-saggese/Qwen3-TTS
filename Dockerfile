@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/pytorch:24.07-py3
+FROM nvcr.io/nvidia/pytorch:24.12-py3
 
 LABEL maintainer="Qwen Team"
 LABEL description="Qwen3-TTS with CUDA support"
@@ -21,27 +21,12 @@ ENV HF_HOME=/app/models \
 
 RUN mkdir -p /app/models
 
-COPY pyproject.toml MANIFEST.in /app/
+COPY . /app
 
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-RUN pip install --no-cache-dir \
-    transformers==4.49.0 \
-    accelerate==1.12.0 \
-    torchao \
-    gradio \
-    librosa \
-    soundfile \
-    onnxruntime \
-    einops \
-    tqdm \
-    scipy \
-    matplotlib \
-    pillow
-
-COPY . /app
-
-RUN pip install -e .
+RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir torchao tqdm scipy matplotlib pillow
 
 EXPOSE 7860
 
