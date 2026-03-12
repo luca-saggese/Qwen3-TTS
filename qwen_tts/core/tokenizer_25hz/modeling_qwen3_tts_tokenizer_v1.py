@@ -27,8 +27,10 @@ from transformers.modeling_utils import PreTrainedModel
 from transformers.utils import ModelOutput, logging
 from transformers.utils.hub import cached_file
 
-def auto_docstring(x):
-    return x
+def auto_docstring(*args, **kwargs):
+    if len(args) == 1 and callable(args[0]):
+        return args[0]
+    return lambda x: x
 
 try:
     from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS

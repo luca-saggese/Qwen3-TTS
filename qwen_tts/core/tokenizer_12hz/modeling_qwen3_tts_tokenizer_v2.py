@@ -45,8 +45,10 @@ from transformers.processing_utils import Unpack
 from transformers.utils import ModelOutput, logging
 from transformers.utils.deprecation import deprecate_kwarg
 
-def auto_docstring(x):
-    return x
+def auto_docstring(*args, **kwargs):
+    if len(args) == 1 and callable(args[0]):
+        return args[0]
+    return lambda x: x
 
 from transformers.utils.generic import check_model_inputs
 
