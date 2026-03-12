@@ -42,8 +42,12 @@ try:
 except ImportError:
     from transformers.models.llama.modeling_llama import LLAMA_ATTENTION_CLASSES as ALL_ATTENTION_FUNCTIONS
 from transformers.processing_utils import Unpack
-from transformers.utils import ModelOutput, auto_docstring, logging
+from transformers.utils import ModelOutput, logging
 from transformers.utils.deprecation import deprecate_kwarg
+
+def auto_docstring(x):
+    return x
+
 from transformers.utils.generic import check_model_inputs
 
 from .configuration_qwen3_tts_tokenizer_v2 import (

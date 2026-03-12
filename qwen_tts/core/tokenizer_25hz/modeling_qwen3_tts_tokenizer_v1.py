@@ -24,8 +24,11 @@ from torch import nn
 from torch.nn import Parameter
 from torch.nn import functional as F
 from transformers.modeling_utils import PreTrainedModel
-from transformers.utils import ModelOutput, auto_docstring, logging
+from transformers.utils import ModelOutput, logging
 from transformers.utils.hub import cached_file
+
+def auto_docstring(x):
+    return x
 
 try:
     from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS
