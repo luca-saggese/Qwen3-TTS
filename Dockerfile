@@ -54,8 +54,8 @@ RUN pip install --no-cache-dir -e .
 # Uncomment the line below per pre-scaricare i modelli durante il build
 # (questo aumenta il tempo di build ma riduce il tempo di startup)
 # RUN python /app/download_models.py --tokenizer-only
-    onnxruntime \
-    einops
+#    onnxruntime \
+#    einops
 
 # ============================================================================
 # Layer 4: Copia il codice sorgente (cache strategy: change frequently)
