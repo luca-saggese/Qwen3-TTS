@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV HF_HOME=/app/models \
     HUGGINGFACE_HUB_CACHE=/app/models/hub \
-    PIP_CONSTRAINT=/etc/pip/constraint.txt \
     GRADIO_SERVER_NAME=0.0.0.0 \
     GRADIO_SERVER_PORT=7860
 
