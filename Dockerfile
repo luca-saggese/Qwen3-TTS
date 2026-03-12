@@ -33,10 +33,12 @@ RUN pip uninstall torchvision -y
 RUN pip install torchvision --no-cache-dir
 RUN pip install --upgrade librosa
 
-EXPOSE 7860
+# Installa flash_attention scaricando il wheel precompilato (sostituisci l'URL con la tua versione/architettura target)
+RUN wget -q "https://github.com/Dao-AILab/flash-attention/releases/download/v2.7.2.post1/flash_attn-2.7.2.post1+cu12torch2.5cxx11abiFALSE-cp312-cp312-linux_aarch64.whl" -O flash_attn_aarch64.whl \
+    && pip install --no-cache-dir flash_attn_aarch64.whl \
+    && rm flash_attn_aarch64.whl
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:7860/info || exit 1
+EXPOSE 8080
 
 CMD ["qwen-tts-demo", "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign", "--port", "8080", "--ip", "0.0.0.0"]
 # qwen-tts-demo Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign --port 8080 --ip 0.0.0.0
