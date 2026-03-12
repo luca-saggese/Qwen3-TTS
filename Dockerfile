@@ -38,7 +38,8 @@ RUN pip install --no-cache-dir \
     tqdm \
     scipy \
     matplotlib \
-    pillow
+    pillow \
+    && pip install --no-cache-dir --no-deps torchvision==0.20.1
 
 COPY . /app
 
