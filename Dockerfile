@@ -27,7 +27,7 @@ COPY pyproject.toml MANIFEST.in /app/
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 RUN pip install --no-cache-dir \
-    transformers==4.57.3 \
+    transformers==4.47.0 \
     accelerate==1.12.0 \
     gradio \
     librosa \
