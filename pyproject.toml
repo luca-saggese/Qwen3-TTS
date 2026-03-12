@@ -20,6 +20,7 @@ license = { text = "Apache-2.0" }
 authors = [{ name = "Alibaba Qwen Team" }]
 
 dependencies = [
+  "transformers>=4.48.0",
   "accelerate==1.12.0",
   "gradio",
   "librosa",
@@ -27,6 +28,13 @@ dependencies = [
   "sox",
   "onnxruntime",
   "einops",
+  "torch",
+  "torchvision",
+  "torchaudio",
+  "tqdm",
+  "scipy",
+  "matplotlib",
+  "pillow",
 ]
 
 [project.urls]

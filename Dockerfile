@@ -27,16 +27,24 @@ COPY pyproject.toml MANIFEST.in /app/
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 RUN pip install --no-cache-dir \
+    transformers>=4.48.0 \
     accelerate==1.12.0 \
     gradio \
     librosa \
     soundfile \
     onnxruntime \
-    einops
+    einops \
+    torch \
+    torchvision \
+    torchaudio \
+    tqdm \
+    scipy \
+    matplotlib \
+    pillow
 
 COPY . /app
 
-RUN pip install --no-cache-dir --no-deps -e .
+RUN pip install -e .
 
 EXPOSE 7860
 
