@@ -26,7 +26,15 @@ from torch.nn import functional as F
 from transformers import MimiConfig, MimiModel
 from transformers.activations import ACT2FN
 from transformers.cache_utils import Cache, DynamicCache
-from transformers.integrations import use_kernel_forward_from_hub
+
+try:
+    from transformers.integrations import use_kernel_forward_from_hub
+except ImportError:
+    def use_kernel_forward_from_hub(*args, **kwargs):
+        if len(args) == 1 and callable(args[0]):
+            return args[0]
+        return lambda x: x
+
 from transformers.masking_utils import (
     create_causal_mask,
     create_sliding_window_causal_mask,
