@@ -27,16 +27,14 @@ COPY pyproject.toml MANIFEST.in /app/
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 RUN pip install --no-cache-dir \
-    transformers==4.46.3 \
+    transformers==4.49.0 \
     accelerate==1.12.0 \
+    torchao \
     gradio \
     librosa \
     soundfile \
     onnxruntime \
     einops \
-    torch \
-    torchvision \
-    torchaudio \
     tqdm \
     scipy \
     matplotlib \
