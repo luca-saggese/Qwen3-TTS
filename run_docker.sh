@@ -145,7 +145,7 @@ main() {
     MODE=${1:-gpu}
     
     # Checks
-    check_docker
+    # check_docker
     
     case $MODE in
         gpu)
