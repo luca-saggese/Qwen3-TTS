@@ -24,9 +24,9 @@ RUN mkdir -p /app/models
 
 COPY . /app
 
-# RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir -e .
 # RUN pip install --no-cache-dir torchao tqdm scipy matplotlib pillow
 
 # # Uninstall and reinstall torchvision to ensure compatibility with the PyTorch version in the base image
